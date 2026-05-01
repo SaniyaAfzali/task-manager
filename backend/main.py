@@ -1,7 +1,8 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from sqlalchemy import create_engine, Column, Integer, String, Boolean, DateTime, ForeignKey, Text, Enum
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, ForeignKey, Text, Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session, relationship
 from pydantic import BaseModel
@@ -10,6 +11,7 @@ from datetime import datetime, timedelta
 from passlib.context import CryptContext
 import jwt
 import enum
+
 DATABASE_URL = "sqlite:////tmp/taskmanager.db"
 SECRET_KEY = "taskmanager-secret-key-2026"
 ALGORITHM = "HS256"
@@ -22,22 +24,28 @@ security = HTTPBearer()
 
 app = FastAPI()
 
-from fastapi.middleware.cors import CORSMiddleware
-
-origins = [
-    "http://localhost:5173",   # local frontend
-    "http://localhost:3000",   # optional
-    "task-manager-production-686e.up.railway.app" # railway frontend
-]
-
+# ── CORS must come first ───────────────────────────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_origin_regex="https://.*\.up\.railway\.app",
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
+
+# ── OPTIONS preflight handler ──────────────────────
+@app.options("/{rest_of_path:path}")
+async def preflight_handler(rest_of_path: str, request: Request):
+    return JSONResponse(
+        content={},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        },
+    )
+
+# ── Enums ──────────────────────────────────────────
 class RoleEnum(str, enum.Enum):
     admin = "admin"
     member = "member"
@@ -52,6 +60,7 @@ class PriorityEnum(str, enum.Enum):
     medium = "medium"
     high = "high"
 
+# ── Models ─────────────────────────────────────────
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
@@ -98,6 +107,7 @@ class Task(Base):
 
 Base.metadata.create_all(bind=engine)
 
+# ── Schemas ────────────────────────────────────────
 class UserCreate(BaseModel):
     name: str
     email: str
@@ -161,6 +171,7 @@ class AddMember(BaseModel):
     user_id: int
     role: RoleEnum = RoleEnum.member
 
+# ── Helpers ────────────────────────────────────────
 def get_db():
     db = SessionLocal()
     try:
@@ -192,6 +203,7 @@ def get_current_user(
         raise HTTPException(status_code=401, detail="User not found")
     return user
 
+# ── Auth ───────────────────────────────────────────
 @app.post("/api/auth/signup")
 def signup(data: UserCreate, db: Session = Depends(get_db)):
     if db.query(User).filter(User.email == data.email).first():
@@ -224,10 +236,12 @@ def login(data: UserLogin, db: Session = Depends(get_db)):
 def me(current_user: User = Depends(get_current_user)):
     return current_user
 
+# ── Users ──────────────────────────────────────────
 @app.get("/api/users", response_model=List[UserOut])
 def list_users(db: Session = Depends(get_db), _: User = Depends(get_current_user)):
     return db.query(User).all()
 
+# ── Projects ───────────────────────────────────────
 @app.post("/api/projects", response_model=ProjectOut)
 def create_project(data: ProjectCreate, db: Session = Depends(get_db),
                    current_user: User = Depends(get_current_user)):
@@ -245,6 +259,7 @@ def list_projects(db: Session = Depends(get_db), current_user: User = Depends(ge
         return db.query(Project).all()
     member_ids = [pm.project_id for pm in db.query(ProjectMember).filter(ProjectMember.user_id == current_user.id).all()]
     return db.query(Project).filter(Project.id.in_(member_ids)).all() if member_ids else []
+
 @app.delete("/api/projects/{project_id}")
 def delete_project(project_id: int, db: Session = Depends(get_db),
                    current_user: User = Depends(get_current_user)):
@@ -258,6 +273,7 @@ def delete_project(project_id: int, db: Session = Depends(get_db),
     db.delete(project)
     db.commit()
     return {"message": "Project deleted"}
+
 @app.get("/api/projects/{project_id}", response_model=ProjectOut)
 def get_project(project_id: int, db: Session = Depends(get_db), _: User = Depends(get_current_user)):
     project = db.query(Project).filter(Project.id == project_id).first()
@@ -283,6 +299,7 @@ def get_members(project_id: int, db: Session = Depends(get_db), _: User = Depend
     members = db.query(ProjectMember).filter(ProjectMember.project_id == project_id).all()
     return [{"user_id": m.user_id, "role": m.role, "name": m.user.name, "email": m.user.email} for m in members]
 
+# ── Tasks ──────────────────────────────────────────
 @app.post("/api/tasks", response_model=TaskOut)
 def create_task(data: TaskCreate, db: Session = Depends(get_db),
                 _: User = Depends(get_current_user)):
@@ -323,19 +340,20 @@ def delete_task(task_id: int, db: Session = Depends(get_db), _: User = Depends(g
     db.commit()
     return {"message": "Task deleted"}
 
+# ── Dashboard ──────────────────────────────────────
 @app.get("/api/dashboard")
 def dashboard(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     now = datetime.utcnow()
     if current_user.role == RoleEnum.admin:
-        tasks = db.query(Task).all()
+        alltasks = db.query(Task).all()
     else:
-        tasks = db.query(Task).filter(Task.assigned_to == current_user.id).all()
+        alltasks = db.query(Task).filter(Task.assigned_to == current_user.id).all()
     return {
-        "total_tasks": len(tasks),
-        "todo": sum(1 for t in tasks if t.status == StatusEnum.todo),
-        "in_progress": sum(1 for t in tasks if t.status == StatusEnum.in_progress),
-        "done": sum(1 for t in tasks if t.status == StatusEnum.done),
-        "overdue": sum(1 for t in tasks if t.due_date and t.due_date < now and t.status != StatusEnum.done),
+        "total_tasks": len(alltasks),
+        "todo": sum(1 for t in alltasks if t.status == StatusEnum.todo),
+        "in_progress": sum(1 for t in alltasks if t.status == StatusEnum.in_progress),
+        "done": sum(1 for t in alltasks if t.status == StatusEnum.done),
+        "overdue": sum(1 for t in alltasks if t.due_date and t.due_date < now and t.status != StatusEnum.done),
         "total_projects": db.query(Project).count() if current_user.role == RoleEnum.admin else 0,
         "total_users": db.query(User).count() if current_user.role == RoleEnum.admin else 0,
     }
