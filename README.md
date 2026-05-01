@@ -1,124 +1,96 @@
-🚀 TaskFlow – Full Stack Task Management Application
-TaskFlow is a full‑stack project and task management web application built as part of a technical assignment.
-It allows teams to create projects, assign tasks, manage members, and track progress through a simple dashboard.
+# 🚀 TaskFlow | Full-Stack Task Management Platform
 
-🌐 Live Demo
+TaskFlow is a full-stack, role-based task management web application built with **FastAPI** and **React**. It features a clean, intuitive UI, JWT-secured authentication, and real-time project and task tracking — all deployed on Railway.
 
-Frontend: https://task-manager-production-686e.up.railway.app
+---
 
-Backend API: https://task-manager-production-6a5c.up.railway.app/docs#/
+## ✨ Features
 
+- **Intuitive Dashboard:** A centralized command view displaying all tasks grouped by status, with overdue task tracking at a glance.
+- **Role-Based Access Control (RBAC):**
+  - **Admins:** Full control to create projects, manage members, assign tasks, and delete records.
+  - **Members:** Access to project boards with the ability to track their assigned work.
+- **Project Management:** Create and organize projects, add team members, and manage project lifecycles.
+- **Task Management:** Create tasks, assign them to users, and move them across three clear stages:
+  `To Do` → `In Progress` → `Done`
+- **Secure Authentication:** User signup and login powered by **JWT tokens** and **Bcrypt** password hashing.
 
-✨ Features
-🔐 Authentication & Authorization
-User Signup & Login
+---
 
-JWT based authentication
+## 🛠️ Tech Stack
 
-Secure password hashing
+- **Backend:** Python / FastAPI
+- **Database:** SQLAlchemy (SQLite)
+- **Frontend:** React (Vite), JavaScript, CSS
+- **Deployment:** Railway
 
-Role based access (Admin & Member)
+---
 
-📁 Project Management
-Create new projects
+## 🌐 Live Links
 
-View all projects
+- **Application:** https://task-manager-production-686e.up.railway.app
+- **API Docs (Swagger):** https://task-manager-production-6a5c.up.railway.app/docs
 
-Delete projects
+---
 
-Add members to projects
+## 🚀 Installation & Local Setup
 
-View project members
+**1. Clone the repository:**
 
-✅ Task Management
-Create tasks under projects
+```bash
+git clone https://github.com/SaniyaAfzali/task-manager.git
+cd task-manager
+```
 
-Assign tasks to users
+**2. Set up and run the backend:**
 
-Update task status
-
-Todo
-
-In Progress
-
-Done
-
-Delete tasks
-
-Filter tasks by project
-
-📊 Dashboard
-Overview of all tasks
-
-Tasks grouped by status
-
-Overdue tasks tracking
-
-🛠️ Tech Stack
-Frontend
-React (Vite)
-
-JavaScript
-
-CSS
-
-Backend
-FastAPI
-
-SQLAlchemy ORM
-
-SQLite Database
-
-JWT Authentication
-
-Deployment
-Frontend: Railway
-
-Backend: Railway
-
-
-VITE_API_URL= https://task-manager-production-6a5c.up.railway.app/docs#/
-
-💻 Running Locally
-
-1️⃣ Clone Repository
-
-git clone https://github.com/SaniyaAfzali/task-manager
-
-cd taskflow
-
-2️⃣ Run Backend
-
+```bash
 cd backend
-
 pip install -r requirements.txt
-
 uvicorn main:app --reload
+```
 
-Backend runs at:
+Backend runs at: `http://localhost:8000`  
+API docs available at: `http://localhost:8000/docs`
 
+**3. Set up and run the frontend:**
 
-http://localhost:8000
-
-3️⃣ Run Frontend
-
+```bash
 cd frontend
-
 npm install
-
 npm run dev
+```
 
-Frontend runs at:
+Frontend runs at: `http://localhost:5173`
 
-http://localhost:5173
+**4. Configure environment:**
 
+Create a `.env` file inside the `frontend/` directory:
 
-🎯 Assignment Note
+```env
+VITE_API_URL=http://localhost:8000
+```
 
-This project was developed as part of a technical assignment to demonstrate full‑stack development skills including API design, authentication, database management, and deployment.
+---
 
+## 🌐 Deployment
 
-👩‍💻 Author
+This project is configured for seamless deployment on **Railway**.
 
-Saniya Afzali
+1. Push your code to GitHub.
+2. Connect your repository to Railway.
+3. Set the `VITE_API_URL` environment variable to your deployed backend URL.
+4. Generate a domain in Railway Settings — and you're live!
 
+---
+
+## 📝 License
+
+This project is open-source and available under the [MIT License](LICENSE).
+
+---
+
+## 👩‍💻 Author
+
+**Saniya Afzali**  
+[github.com/SaniyaAfzali](https://github.com/SaniyaAfzali)
