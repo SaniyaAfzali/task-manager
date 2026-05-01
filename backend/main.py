@@ -10,8 +10,6 @@ from datetime import datetime, timedelta
 from passlib.context import CryptContext
 import jwt
 import enum
-from database import Base,engine 
-Base.metdata.create_all(bind=engine)
 DATABASE_URL = "sqlite:////tmp/taskmanager.db"
 SECRET_KEY = "taskmanager-secret-key-2026"
 ALGORITHM = "HS256"
