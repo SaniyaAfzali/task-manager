@@ -22,14 +22,22 @@ security = HTTPBearer()
 
 app = FastAPI()
 
+from fastapi.middleware.cors import CORSMiddleware
+
+origins = [
+    "http://localhost:5173",   # local frontend
+    "http://localhost:3000",   # optional
+    "task-manager-production-686e.up.railway.app" # railway frontend
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
+    allow_origin_regex="https://.*\.up\.railway\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 class RoleEnum(str, enum.Enum):
     admin = "admin"
     member = "member"
