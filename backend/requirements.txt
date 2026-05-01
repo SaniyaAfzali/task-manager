@@ -4,5 +4,6 @@ uvicorn==0.29.0
 sqlalchemy==2.0.30
 pydantic==2.7.1
 passlib[bcrypt]==1.7.4
+bcrypt
 pyjwt==2.8.0
 python-multipart==0.0.9
